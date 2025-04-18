@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model FormSubmission {
+  id                    String   @id @default(cuid())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Dane podstawowe
+  firstName             String
+  lastName              String
+  email                 String
+  phone                 String
+  
+  // Dane użytkownika
+  gender                String   // "male" lub "female"
+  ageRange              String   // "below_25", "25_34", "35_44", "45_54", "55_plus"
+  voivodeship           String   // województwo
+  residenceType         String   // "village", "small_city", "medium_city", "large_city"
+  
+  // Dane drugiego rodzica
+  otherParentGender     String   // "male" lub "female"
+  otherParentAgeRange   String   // "below_25", "25_34", "35_44", "45_54", "55_plus"
+  otherParentVoivodeship String  // województwo drugiego rodzica
+  otherParentResidenceType String // "village", "small_city", "medium_city", "large_city"
+  
+  // Stan cywilny
+  maritalStatus         String   // "divorce_no_fault", "divorce_with_fault", etc.
+  divorceInitiator      String?  // "self", "other_parent"
+  faultClaim            Boolean?
+  
+  // Dane o alimentach
+  alimentBasis          String   // "court_order", "divorce_decree", "parental_agreement", "other"
+  alimentBasisOther     String?  // jeśli alimentBasis == "other"
+  
+  // Informacje o sądzie
+  courtDate             DateTime?
+  courtType             String?  // "district", "regional"
+  courtLocation         String?  // miasto sądu
+  judgeCount            Int?     // 1 lub 3
+  judgeGender           String?  // "male" lub "female"
+  judgeSatisfaction     Int?     // 1-5
+  
+  // Dochody i koszty
+  userIncome            Float    // dochód użytkownika
+  userPotentialIncome   Float    // potencjalny dochód użytkownika
+  userLivingCosts       Float    // koszty utrzymania użytkownika
+  userDependantsCosts   Float    // koszty utrzymania osób na utrzymaniu użytkownika
+  userAdditionalObligations Float // dodatkowe zobowiązania użytkownika
+  
+  otherParentIncome     Float    // dochód drugiego rodzica
+  otherParentPotentialIncome Float // potencjalny dochód drugiego rodzica
+  otherParentLivingCosts Float    // koszty utrzymania drugiego rodzica
+  otherParentDependantsCosts Float // koszty utrzymania osób na utrzymaniu drugiego rodzica
+  otherParentAdditionalObligations Float // dodatkowe zobowiązania drugiego rodzica
+  
+  // Dane o dzieciach
+  childrenCount         Int      // liczba dzieci objętych alimentami
+  children              Child[]  // lista dzieci
+  
+  // Zgody
+  dataProcessingConsent Boolean  // zgoda na przetwarzanie danych
+  communicationConsent  Boolean  // zgoda na komunikację
+  agreeToTerms          Boolean  // zgoda na regulamin
+  
+  // Dane zabezpieczające
+  ipHash                String?  // hasza adresu IP
+  hashedEmail           String?  // zahaszowany email
+}
+
+model Child {
+  id                    String   @id @default(cuid())
+  formSubmission        FormSubmission @relation(fields: [formSubmissionId], references: [id], onDelete: Cascade)
+  formSubmissionId      String
+  
+  // Podstawowe dane
+  age                   Int      // wiek dziecka w latach
+  
+  // Edukacja
+  attendsEducation      Boolean  // czy uczęszcza do placówki edukacyjnej
+  educationType         String?  // "nursery", "kindergarten", "primary_school", "secondary_school"
+  
+  // Koszty
+  userCosts             Float    // koszty ponoszone przez użytkownika
+  otherParentCosts      Float    // koszty ponoszone przez drugiego rodzica
+  courtRecognizedCosts  Float?   // koszty uznane przez sąd
+  alimentAmount         Float    // kwota alimentów
+  
+  // Dodatkowe źródła utrzymania
+  hasFamilyPension      Boolean  // renta rodzinna
+  hasCareTaking         Boolean  // świadczenie pielęgnacyjne
+  hasOtherSources       Boolean  // inne źródła
+  otherSourcesDescription String? // opis innych źródeł
+  
+  // Opieka
+  careType              String   // "shared_equally", "custom"
+  careSchedule          CareSchedule?
+}
+
+model CareSchedule {
+  id                    String   @id @default(cuid())
+  child                 Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  childId               String   @unique
+  
+  cycleType             String   // "weekly", "biweekly", "monthly", "no_pattern"
+  scheduleData          Json     // dane o harmonogramie w formacie JSON
+}
