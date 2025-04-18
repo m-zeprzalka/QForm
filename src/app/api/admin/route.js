@@ -7,23 +7,23 @@ export async function GET() {
   try {
     // W produkcyjnej wersji należy tutaj dodać uwierzytelnianie
 
+    // Rozszerzone pobieranie danych, aby złączyć ten endpoint z /api/admin/submissions
     const submissions = await prisma.formSubmission.findMany({
+      include: {
+        children: true, // Dołączamy również dane o dzieciach
+      },
       orderBy: {
         createdAt: "desc",
       },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        phone: true,
-        createdAt: true,
-        agreeToTerms: true,
-        dataProcessingConsent: true,
-      },
     });
 
-    return NextResponse.json({ submissions }, { status: 200 });
+    return NextResponse.json(
+      {
+        submissions,
+        total: submissions.length,
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Błąd podczas pobierania zgłoszeń:", error);
     return NextResponse.json(

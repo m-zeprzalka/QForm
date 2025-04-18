@@ -1,7 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { Check, ArrowRight, ArrowLeft, CheckCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import {
+  Check,
+  ArrowRight,
+  ArrowLeft,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
 
 import Step1Introduction from "./form-steps/Step1Introduction";
 import Step2UserData from "./form-steps/Step2UserData";
@@ -77,6 +83,31 @@ const AliMatrixForm = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [formError, setFormError] = useState(null);
+  const [saveStatus, setSaveStatus] = useState(null);
+
+  // Sprawdź, czy istnieją zapisane dane formularza
+  useEffect(() => {
+    const savedData = localStorage.getItem("alimatrix-form-data");
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData);
+        setFormData(parsedData);
+      } catch (e) {
+        console.error("Nie udało się wczytać zapisanych danych formularza:", e);
+      }
+    }
+  }, []);
+
+  // Czyszczenie statusu zapisywania po czasie
+  useEffect(() => {
+    if (saveStatus) {
+      const timer = setTimeout(() => {
+        setSaveStatus(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [saveStatus]);
 
   const validateStep = (currentStep) => {
     let stepErrors = {};
@@ -140,20 +171,29 @@ const AliMatrixForm = () => {
             stepErrors[`children[${index}].age`] =
               "Podaj poprawny wiek dziecka";
           }
-          if (!child.userCosts || isNaN(parseFloat(child.userCosts))) {
+          if (
+            !child.userCosts ||
+            isNaN(parseFloat(child.userCosts)) ||
+            parseFloat(child.userCosts) < 0
+          ) {
             stepErrors[`children[${index}].userCosts`] =
-              "Podaj koszty ponoszone przez Ciebie";
+              "Podaj prawidłową kwotę kosztów";
           }
           if (
             !child.otherParentCosts ||
-            isNaN(parseFloat(child.otherParentCosts))
+            isNaN(parseFloat(child.otherParentCosts)) ||
+            parseFloat(child.otherParentCosts) < 0
           ) {
             stepErrors[`children[${index}].otherParentCosts`] =
-              "Podaj koszty ponoszone przez drugiego rodzica";
+              "Podaj prawidłową kwotę kosztów drugiego rodzica";
           }
-          if (!child.alimentAmount || isNaN(parseFloat(child.alimentAmount))) {
+          if (
+            !child.alimentAmount ||
+            isNaN(parseFloat(child.alimentAmount)) ||
+            parseFloat(child.alimentAmount) < 0
+          ) {
             stepErrors[`children[${index}].alimentAmount`] =
-              "Podaj kwotę alimentów";
+              "Podaj prawidłową kwotę alimentów";
           }
         });
         break;
@@ -171,20 +211,28 @@ const AliMatrixForm = () => {
         break;
 
       case 5:
-        if (!formData.userIncome || isNaN(parseFloat(formData.userIncome))) {
-          stepErrors.userIncome = "Podaj swój dochód";
+        if (
+          !formData.userIncome ||
+          isNaN(parseFloat(formData.userIncome)) ||
+          parseFloat(formData.userIncome) < 0
+        ) {
+          stepErrors.userIncome = "Podaj prawidłową kwotę dochodu";
         }
         if (
           !formData.userLivingCosts ||
-          isNaN(parseFloat(formData.userLivingCosts))
+          isNaN(parseFloat(formData.userLivingCosts)) ||
+          parseFloat(formData.userLivingCosts) < 0
         ) {
-          stepErrors.userLivingCosts = "Podaj koszty swojego utrzymania";
+          stepErrors.userLivingCosts =
+            "Podaj prawidłową kwotę kosztów utrzymania";
         }
         if (
           !formData.otherParentIncome ||
-          isNaN(parseFloat(formData.otherParentIncome))
+          isNaN(parseFloat(formData.otherParentIncome)) ||
+          parseFloat(formData.otherParentIncome) < 0
         ) {
-          stepErrors.otherParentIncome = "Podaj dochód drugiego rodzica";
+          stepErrors.otherParentIncome =
+            "Podaj prawidłową kwotę dochodu drugiego rodzica";
         }
         break;
 
@@ -204,7 +252,33 @@ const AliMatrixForm = () => {
     }
 
     setErrors(stepErrors);
-    return Object.keys(stepErrors).length === 0;
+    const isValid = Object.keys(stepErrors).length === 0;
+
+    if (!isValid) {
+      // Przewiń do pierwszego błędu
+      setTimeout(() => {
+        const firstErrorElement = document.querySelector(".text-red-600");
+        if (firstErrorElement) {
+          firstErrorElement.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+        }
+      }, 100);
+    }
+
+    return isValid;
+  };
+
+  // Funkcja zapisująca postęp formularza
+  const saveProgress = () => {
+    try {
+      localStorage.setItem("alimatrix-form-data", JSON.stringify(formData));
+      return true;
+    } catch (error) {
+      console.error("Błąd podczas zapisywania formularza:", error);
+      return false;
+    }
   };
 
   const handleChange = (e) => {
@@ -218,6 +292,11 @@ const AliMatrixForm = () => {
     if (!name) {
       console.error("Brak nazwy pola w evencie:", e);
       return;
+    }
+
+    // Usunięcie błędu formularza, gdy użytkownik zaczyna coś zmieniać
+    if (formError) {
+      setFormError(null);
     }
 
     if (name.startsWith("children[")) {
@@ -269,6 +348,8 @@ const AliMatrixForm = () => {
 
   const nextStep = () => {
     if (validateStep(step)) {
+      // Zapisuj postęp automatycznie przy przejściu do następnego kroku
+      saveProgress();
       setStep(step + 1);
       window.scrollTo(0, 0);
     }
@@ -279,11 +360,22 @@ const AliMatrixForm = () => {
     window.scrollTo(0, 0);
   };
 
+  // Funkcja obsługująca manualne zapisanie postępu
+  const handleSaveProgress = () => {
+    const saved = saveProgress();
+    if (saved) {
+      setSaveStatus("saved");
+    } else {
+      setSaveStatus("error");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (validateStep(step)) {
       setIsSubmitting(true);
+      setFormError(null);
 
       try {
         const response = await fetch("/api/submit-alimatrix-form", {
@@ -302,10 +394,19 @@ const AliMatrixForm = () => {
 
         setIsSubmitting(false);
         setIsSubmitted(true);
+
+        // Usuń zapisane dane formularza po pomyślnym przesłaniu
+        localStorage.removeItem("alimatrix-form-data");
       } catch (error) {
         console.error("Błąd:", error);
         setIsSubmitting(false);
-        alert("Wystąpił błąd podczas wysyłania formularza: " + error.message);
+        setFormError(
+          error.message ||
+            "Wystąpił błąd podczas wysyłania formularza. Spróbuj ponownie później."
+        );
+
+        // Przewiń na górę, aby pokazać komunikat błędu
+        window.scrollTo(0, 0);
       }
     }
   };
@@ -329,6 +430,63 @@ const AliMatrixForm = () => {
         </div>
       </div>
     );
+  };
+
+  const renderStepContent = () => {
+    switch (step) {
+      case 1:
+        return (
+          <Step1Introduction
+            formData={formData}
+            handleChange={handleChange}
+            errors={errors}
+          />
+        );
+      case 2:
+        return (
+          <Step2UserData
+            formData={formData}
+            handleChange={handleChange}
+            updateFormData={updateFormData}
+            errors={errors}
+          />
+        );
+      case 3:
+        return (
+          <Step3Children
+            formData={formData}
+            handleChange={handleChange}
+            updateFormData={updateFormData}
+            errors={errors}
+          />
+        );
+      case 4:
+        return (
+          <Step4Court
+            formData={formData}
+            handleChange={handleChange}
+            errors={errors}
+          />
+        );
+      case 5:
+        return (
+          <Step5Income
+            formData={formData}
+            handleChange={handleChange}
+            errors={errors}
+          />
+        );
+      case 6:
+        return (
+          <Step6Consents
+            formData={formData}
+            handleChange={handleChange}
+            errors={errors}
+          />
+        );
+      default:
+        return null;
+    }
   };
 
   const renderButtons = () => {
@@ -400,63 +558,6 @@ const AliMatrixForm = () => {
     );
   };
 
-  const renderStepContent = () => {
-    switch (step) {
-      case 1:
-        return (
-          <Step1Introduction
-            formData={formData}
-            handleChange={handleChange}
-            errors={errors}
-          />
-        );
-      case 2:
-        return (
-          <Step2UserData
-            formData={formData}
-            handleChange={handleChange}
-            updateFormData={updateFormData}
-            errors={errors}
-          />
-        );
-      case 3:
-        return (
-          <Step3Children
-            formData={formData}
-            handleChange={handleChange}
-            updateFormData={updateFormData}
-            errors={errors}
-          />
-        );
-      case 4:
-        return (
-          <Step4Court
-            formData={formData}
-            handleChange={handleChange}
-            errors={errors}
-          />
-        );
-      case 5:
-        return (
-          <Step5Income
-            formData={formData}
-            handleChange={handleChange}
-            errors={errors}
-          />
-        );
-      case 6:
-        return (
-          <Step6Consents
-            formData={formData}
-            handleChange={handleChange}
-            errors={errors}
-          />
-        );
-      default:
-        return null;
-    }
-  };
-
   if (isSubmitted) {
     return (
       <div className="w-full max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden p-8 text-center">
@@ -492,8 +593,44 @@ const AliMatrixForm = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="p-6">
+        {formError && (
+          <div className="mb-6 bg-red-50 p-4 rounded-lg border border-red-200 flex items-start">
+            <AlertCircle
+              size={20}
+              className="text-red-500 flex-shrink-0 mt-0.5"
+            />
+            <p className="ml-3 text-sm text-red-700">{formError}</p>
+          </div>
+        )}
+
         {renderProgress()}
         {renderStepContent()}
+
+        {/* Przycisk do zapisania postępu */}
+        <div className="mt-4 mb-2 text-center">
+          <button
+            type="button"
+            onClick={handleSaveProgress}
+            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+          >
+            Zapisz postęp formularza
+          </button>
+
+          {saveStatus === "saved" && (
+            <span className="ml-2 text-green-600 text-sm">
+              <Check size={14} className="inline mr-1" />
+              Zapisano!
+            </span>
+          )}
+
+          {saveStatus === "error" && (
+            <span className="ml-2 text-red-600 text-sm">
+              <AlertCircle size={14} className="inline mr-1" />
+              Błąd zapisywania
+            </span>
+          )}
+        </div>
+
         {renderButtons()}
       </form>
     </div>

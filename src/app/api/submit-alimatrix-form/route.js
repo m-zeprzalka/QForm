@@ -22,8 +22,14 @@ function safeParseInt(value) {
 
 function safeParseDateOrNull(dateInput) {
   if (!dateInput) return null;
-  const date = new Date(dateInput);
-  return date.getFullYear() > 1 && date.getFullYear() < 9999 ? date : null;
+  try {
+    const date = new Date(dateInput);
+    // Sprawdź, czy data jest poprawna (nie jest Invalid Date)
+    return isNaN(date.getTime()) ? null : date;
+  } catch (error) {
+    console.error("Błąd parsowania daty:", error);
+    return null;
+  }
 }
 
 export async function POST(request) {
@@ -87,7 +93,6 @@ export async function POST(request) {
       agreeToTerms: body.agreeToTerms === true,
 
       ipHash: ipHash,
-      // cd. route.js
       hashedEmail: hashedEmail,
     };
 

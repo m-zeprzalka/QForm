@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Download, Eye } from "lucide-react";
+import { Download, Eye, AlertCircle } from "lucide-react";
 import * as XLSX from "xlsx";
+
 const POLISH_LABELS = {
   firstName: "Imię",
   lastName: "Nazwisko",
@@ -84,6 +85,40 @@ const POLISH_VALUES = {
   secondary_school: "Szkoła ponadpodstawowa",
   shared_equally: "Opieka naprzemienna",
   custom: "Indywidualna",
+  district: "Sąd Rejonowy",
+  regional: "Sąd Okręgowy",
+};
+
+// Funkcja do formatowania daty
+const formatDate = (dateString) => {
+  if (!dateString) return "Brak danych";
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleString("pl-PL", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch (error) {
+    console.error("Błąd formatowania daty:", error);
+    return dateString;
+  }
+};
+
+// Funkcja do formatowania wartości liczbowych
+const formatNumericValue = (value) => {
+  if (value === null || value === undefined) return "Brak danych";
+  if (typeof value === "number") return value.toLocaleString("pl-PL");
+  return value;
+};
+
+// Funkcja do formatowania wartości boolowskich
+const formatBooleanValue = (value) => {
+  if (value === true) return "Tak";
+  if (value === false) return "Nie";
+  return "Brak danych";
 };
 
 export default function AdminPage() {
@@ -100,11 +135,48 @@ export default function AdminPage() {
           throw new Error("Nie udało się pobrać zgłoszeń");
         }
         const data = await response.json();
-        setSubmissions(data.submissions);
+
+        // Konwersja typów dla pól numerycznych
+        const processedSubmissions = data.submissions.map((submission) => ({
+          ...submission,
+          judgeCount: Number(submission.judgeCount),
+          judgeSatisfaction: Number(submission.judgeSatisfaction),
+          userIncome: Number(submission.userIncome),
+          userPotentialIncome: Number(submission.userPotentialIncome),
+          userLivingCosts: Number(submission.userLivingCosts),
+          userDependantsCosts: Number(submission.userDependantsCosts),
+          userAdditionalObligations: Number(
+            submission.userAdditionalObligations
+          ),
+          otherParentIncome: Number(submission.otherParentIncome),
+          otherParentPotentialIncome: Number(
+            submission.otherParentPotentialIncome
+          ),
+          otherParentLivingCosts: Number(submission.otherParentLivingCosts),
+          otherParentDependantsCosts: Number(
+            submission.otherParentDependantsCosts
+          ),
+          otherParentAdditionalObligations: Number(
+            submission.otherParentAdditionalObligations
+          ),
+          childrenCount: Number(submission.childrenCount),
+          children: submission.children.map((child) => ({
+            ...child,
+            age: Number(child.age),
+            userCosts: Number(child.userCosts),
+            otherParentCosts: Number(child.otherParentCosts),
+            courtRecognizedCosts: child.courtRecognizedCosts
+              ? Number(child.courtRecognizedCosts)
+              : null,
+            alimentAmount: Number(child.alimentAmount),
+          })),
+        }));
+
+        setSubmissions(processedSubmissions);
         setLoading(false);
       } catch (error) {
         console.error("Błąd:", error);
-        setError("Wystąpił błąd podczas pobierania danych");
+        setError("Wystąpił błąd podczas pobierania danych: " + error.message);
         setLoading(false);
       }
     }
@@ -113,29 +185,102 @@ export default function AdminPage() {
   }, []);
 
   const exportToExcel = () => {
-    const exportData = submissions.map((submission) => ({
-      ID: submission.id.substring(0, 8),
-      "Data utworzenia": new Date(submission.createdAt).toLocaleString(),
-      ...Object.fromEntries(
-        Object.entries(submission).filter(
-          ([key]) =>
-            typeof submission[key] !== "object" &&
-            key !== "children" &&
-            key !== "id" &&
-            key !== "createdAt" &&
-            key !== "updatedAt"
-        )
-      ),
-    }));
+    try {
+      // Przygotowanie danych do eksportu
+      const exportData = submissions.map((submission) => {
+        // Przygotowanie podstawowych danych
+        const basicData = {
+          ID: submission.id.substring(0, 8),
+          "Data utworzenia": formatDate(submission.createdAt),
+        };
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Zgłoszenia");
+        // Dodanie pozostałych pól z odpowiednim formatowaniem
+        const formattedData = {};
+        Object.entries(submission).forEach(([key, value]) => {
+          // Pomijamy pola, które nie chcemy eksportować
+          if (["children", "id", "createdAt", "updatedAt"].includes(key)) {
+            return;
+          }
 
-    XLSX.writeFile(
-      workbook,
-      `AliMatrix_Zgloszenia_${new Date().toISOString().split("T")[0]}.xlsx`
-    );
+          // Formatowanie wartości w zależności od typu
+          let formattedValue;
+          if (typeof value === "boolean") {
+            formattedValue = formatBooleanValue(value);
+          } else if (typeof value === "number") {
+            formattedValue = formatNumericValue(value);
+          } else if (key === "courtDate" && value) {
+            formattedValue = formatDate(value);
+          } else {
+            formattedValue = POLISH_VALUES[value] || value;
+          }
+
+          const label = POLISH_LABELS[key] || key;
+          formattedData[label] = formattedValue;
+        });
+
+        return {
+          ...basicData,
+          ...formattedData,
+        };
+      });
+
+      // Utworzenie arkusza Excel
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Zgłoszenia");
+
+      // Zapisanie pliku
+      XLSX.writeFile(
+        workbook,
+        `AliMatrix_Zgloszenia_${new Date().toISOString().split("T")[0]}.xlsx`
+      );
+    } catch (error) {
+      console.error("Błąd podczas eksportu do Excel:", error);
+      alert("Wystąpił błąd podczas eksportu danych: " + error.message);
+    }
+  };
+
+  // Funkcja do formatowania wartości dla wyświetlania
+  const formatValue = (key, value) => {
+    if (value === null || value === undefined || value === "") {
+      return "Brak danych";
+    }
+
+    if (typeof value === "boolean") {
+      return value ? "Tak" : "Nie";
+    }
+
+    if (typeof value === "number") {
+      // Formatuj wartości pieniężne
+      if (
+        [
+          "userIncome",
+          "userPotentialIncome",
+          "userLivingCosts",
+          "userDependantsCosts",
+          "userAdditionalObligations",
+          "otherParentIncome",
+          "otherParentPotentialIncome",
+          "otherParentLivingCosts",
+          "otherParentDependantsCosts",
+          "otherParentAdditionalObligations",
+          "alimentAmount",
+          "userCosts",
+          "otherParentCosts",
+          "courtRecognizedCosts",
+        ].includes(key)
+      ) {
+        return `${value.toLocaleString("pl-PL")} zł`;
+      }
+
+      return value.toString();
+    }
+
+    if (key === "courtDate") {
+      return formatDate(value);
+    }
+
+    return POLISH_VALUES[value] || value;
   };
 
   if (loading) {
@@ -151,8 +296,9 @@ export default function AdminPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {error}
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded flex items-start">
+          <AlertCircle size={20} className="flex-shrink-0 mr-2 mt-0.5" />
+          <span>{error}</span>
         </div>
       </div>
     );
@@ -176,10 +322,13 @@ export default function AdminPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Hash
+                  ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Data wysłania
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Liczba dzieci
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Akcje
@@ -188,19 +337,22 @@ export default function AdminPage() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {submissions.map((submission) => (
-                <tr key={submission.id}>
+                <tr key={submission.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {submission.id.substring(0, 8)}...
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(submission.createdAt).toLocaleDateString()}
+                    {formatDate(submission.createdAt)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {submission.childrenCount}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <button
                       onClick={() => setSelectedSubmission(submission)}
                       className="text-blue-600 hover:text-blue-900 flex items-center"
                     >
-                      <Eye size={18} className="mr-1" />
+                      <Eye size={18} className="mr-1" /> Szczegóły
                     </button>
                   </td>
                 </tr>
@@ -209,11 +361,11 @@ export default function AdminPage() {
           </table>
         </div>
 
-        {/* Elegancki modal ze szczegółami */}
+        {/* Modal ze szczegółami */}
         {selectedSubmission && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto">
             <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="bg-gray-100 p-6 border-b border-gray-200 flex justify-between items-center">
+              <div className="bg-gray-100 p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 z-10">
                 <h2 className="text-xl font-bold text-gray-800">
                   Szczegóły zgłoszenia
                 </h2>
@@ -247,14 +399,7 @@ export default function AdminPage() {
                             {POLISH_LABELS[key] || key}:
                           </span>
                           <span className="ml-2 text-gray-800">
-                            {POLISH_VALUES[value] ||
-                              (value === null || value === ""
-                                ? "Brak danych"
-                                : typeof value === "boolean"
-                                ? value
-                                  ? "Tak"
-                                  : "Nie"
-                                : String(value))}
+                            {formatValue(key, value)}
                           </span>
                         </div>
                       ))}
@@ -286,14 +431,7 @@ export default function AdminPage() {
                                   {POLISH_LABELS[key] || key}:
                                 </span>
                                 <span className="ml-2 text-gray-800 text-sm">
-                                  {POLISH_VALUES[value] ||
-                                    (value === null || value === ""
-                                      ? "Brak danych"
-                                      : typeof value === "boolean"
-                                      ? value
-                                        ? "Tak"
-                                        : "Nie"
-                                      : String(value))}
+                                  {formatValue(key, value)}
                                 </span>
                               </div>
                             ))}

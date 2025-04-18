@@ -46,6 +46,18 @@ const Step4Court = ({ formData, handleChange, errors }) => {
     );
   }
 
+  // Funkcja do obsługi zmiany liczby sędziów - konwertuje wartość na liczbę
+  const handleJudgeCountChange = (e) => {
+    const value = parseInt(e.target.value, 10);
+    handleChange({
+      target: {
+        name: "judgeCount",
+        value: value,
+        type: "number",
+      },
+    });
+  };
+
   // Funkcja bezpiecznego handleChange dla suwaka
   const handleSatisfactionChange = (e) => {
     const value = parseInt(e.target.value, 10);
@@ -191,11 +203,9 @@ const Step4Court = ({ formData, handleChange, errors }) => {
                 type="radio"
                 id="judgeCount-1"
                 name="judgeCount"
-                value="1"
-                checked={
-                  formData.judgeCount === 1 || formData.judgeCount === "1"
-                }
-                onChange={handleChange}
+                value={1}
+                checked={Number(formData.judgeCount) === 1}
+                onChange={handleJudgeCountChange}
                 className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
               />
               <label
@@ -210,11 +220,9 @@ const Step4Court = ({ formData, handleChange, errors }) => {
                 type="radio"
                 id="judgeCount-3"
                 name="judgeCount"
-                value="3"
-                checked={
-                  formData.judgeCount === 3 || formData.judgeCount === "3"
-                }
-                onChange={handleChange}
+                value={3}
+                checked={Number(formData.judgeCount) === 3}
+                onChange={handleJudgeCountChange}
                 className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
               />
               <label
@@ -300,7 +308,7 @@ const Step4Court = ({ formData, handleChange, errors }) => {
             id="judgeSatisfaction"
             min="1"
             max="5"
-            value={formData.judgeSatisfaction || 3}
+            value={Number(formData.judgeSatisfaction) || 3}
             onChange={handleSatisfactionChange}
             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
           />
