@@ -129,9 +129,9 @@ const CareScheduleTable = ({
 
   // Obsługa zmiany wartości w tabeli
   const handleTimeChange = (dayId, fieldId, value) => {
-    // Walidacja formatu czasu
-    if (value && !/^\d{1,2}-\d{1,2}$/.test(value)) {
-      return; // Ignoruj nieprawidłowy format
+    // Zmodyfikowana walidacja formatu czasu - pozwala na wprowadzanie częściowych wartości
+    if (value && value !== "-" && !/^(\d{1,2})?(-)?(\d{1,2})?$/.test(value)) {
+      return; // Ignoruj tylko całkowicie nieprawidłowy format
     }
 
     const updatedSchedule = {

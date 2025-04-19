@@ -219,6 +219,67 @@ const Step1Introduction = ({ formData, handleChange, errors }) => {
           )}
         </div>
       </div>
+      <div className="space-y-4">
+        <div>
+          <label
+            htmlFor="alimentBasis"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            Podstawa ustalenia alimentów
+          </label>
+          <select
+            id="alimentBasis"
+            name="alimentBasis"
+            value={formData.alimentBasis}
+            onChange={handleChange}
+            className={`mt-1 block w-full py-2 px-3 border ${
+              errors.alimentBasis ? "border-red-500" : "border-gray-300"
+            } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+          >
+            <option value="">Wybierz podstawę</option>
+            <option value="court_order">Postanowienie zabezpieczające</option>
+            <option value="divorce_decree">Wyrok rozwodowy</option>
+            <option value="parental_agreement">
+              Porozumienie rodzicielskie
+            </option>
+            <option value="other">Inne</option>
+          </select>
+          {errors.alimentBasis && (
+            <p className="mt-1 text-sm text-red-600 flex items-center">
+              <AlertCircle size={14} className="mr-1" />
+              {errors.alimentBasis}
+            </p>
+          )}
+        </div>
+
+        {formData.alimentBasis === "other" && (
+          <div>
+            <label
+              htmlFor="alimentBasisOther"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Inna podstawa ustalenia alimentów
+            </label>
+            <input
+              type="text"
+              id="alimentBasisOther"
+              name="alimentBasisOther"
+              value={formData.alimentBasisOther}
+              onChange={handleChange}
+              className={`w-full px-3 py-2 border ${
+                errors.alimentBasisOther ? "border-red-500" : "border-gray-300"
+              } rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+              placeholder="Podaj inną podstawę"
+            />
+            {errors.alimentBasisOther && (
+              <p className="mt-1 text-sm text-red-600 flex items-center">
+                <AlertCircle size={14} className="mr-1" />
+                {errors.alimentBasisOther}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

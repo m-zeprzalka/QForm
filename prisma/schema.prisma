@@ -39,6 +39,7 @@ model FormSubmission {
   alimentBasis                   String   // "court_order", "divorce_decree", "parental_agreement", "other"
   alimentBasisOther              String?  // jeśli alimentBasis == "other"
   
+  
   // Informacje o sądzie
   courtDate                      DateTime?
   courtType                      String?  // "district", "regional"

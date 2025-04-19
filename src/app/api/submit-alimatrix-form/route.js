@@ -47,25 +47,25 @@ function processCareSchedules(careScheduleData, childId) {
 
   // Przekształć dane o harmonogramie w format do zapisu
   return careScheduleData.map((schedule) => {
-    const hoursWithUser = safeParseFloat(schedule.hoursWithUser || 0);
-    const hoursWithOtherParent = safeParseFloat(
-      schedule.hoursWithOtherParent || 0
-    );
-    const hoursAtSchool = safeParseFloat(schedule.hoursAtSchool || 0);
+    // Przygotowanie danych do scheduleData (wszystkie szczegóły)
+    const scheduleDataObject = {
+      weekNumber: safeParseInt(schedule.weekNumber || 1),
+      dayOfWeek: schedule.dayOfWeek,
+      morningHours: schedule.morningHours || "",
+      educationalHours: schedule.educationalHours || "",
+      afternoonHours: schedule.afternoonHours || "",
+      sleepAtUser: schedule.sleepAtUser || "",
+      sleepAtOtherParent: schedule.sleepAtOtherParent || "",
+      hoursWithUser: safeParseFloat(schedule.hoursWithUser || 0),
+      hoursWithOtherParent: safeParseFloat(schedule.hoursWithOtherParent || 0),
+      hoursAtSchool: safeParseFloat(schedule.hoursAtSchool || 0),
+    };
 
+    // Zwróć tylko pola, które są w bazie danych
     return {
       childId,
       cycleType: schedule.cycleType || "weekly",
-      weekNumber: safeParseInt(schedule.weekNumber || 1),
-      dayOfWeek: schedule.dayOfWeek,
-      morningHours: schedule.morningHours,
-      educationalHours: schedule.educationalHours,
-      afternoonHours: schedule.afternoonHours,
-      sleepAtUser: schedule.sleepAtUser,
-      sleepAtOtherParent: schedule.sleepAtOtherParent,
-      hoursWithUser,
-      hoursWithOtherParent,
-      hoursAtSchool,
+      scheduleData: scheduleDataObject,
     };
   });
 }
@@ -108,7 +108,7 @@ export async function POST(request) {
       courtLocation: body.courtLocation || null,
       judgeCount: safeParseInt(body.judgeCount) || 1,
       judgeGender: body.judgeGender || null,
-      judgeInitials: body.judgeInitials || null,
+      // Usunięto judgeInitials
       judgeSatisfaction: safeParseInt(body.judgeSatisfaction) || 3,
 
       userIncome: safeParseFloat(body.userIncome),
@@ -137,9 +137,13 @@ export async function POST(request) {
       hashedEmail: hashedEmail,
     };
 
+    // Usuwamy pole judgeInitials z danych przed przekazaniem ich do bazy danych
+    const { judgeInitials, ...formDataWithoutJudgeInitials } =
+      formSubmissionData;
+
     // Zapisanie głównego formularza w bazie danych
     const formSubmission = await prisma.formSubmission.create({
-      data: formSubmissionData,
+      data: formDataWithoutJudgeInitials,
     });
 
     // Przetwarzanie danych o dzieciach
@@ -207,5 +211,7 @@ export async function POST(request) {
       },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }
