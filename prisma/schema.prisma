@@ -8,106 +8,122 @@ datasource db {
 }
 
 model FormSubmission {
-  id                    String   @id @default(cuid())
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id                             String   @id @default(cuid())
+  createdAt                      DateTime @default(now())
+  updatedAt                      DateTime @updatedAt
   
   // Dane podstawowe
-  firstName             String
-  lastName              String
-  email                 String
-  phone                 String
+  firstName                      String
+  lastName                       String
+  email                          String
+  phone                          String
   
   // Dane użytkownika
-  gender                String   // "male" lub "female"
-  ageRange              String   // "below_25", "25_34", "35_44", "45_54", "55_plus"
-  voivodeship           String   // województwo
-  residenceType         String   // "village", "small_city", "medium_city", "large_city"
+  gender                         String   // "female" lub "male"
+  ageRange                       String   // "below_25", "25_34", "35_44", "45_54", "55_plus"
+  voivodeship                    String   // województwo
+  residenceType                  String   // "village", "small_city", "medium_city", "large_city"
   
   // Dane drugiego rodzica
-  otherParentGender     String   // "male" lub "female"
-  otherParentAgeRange   String   // "below_25", "25_34", "35_44", "45_54", "55_plus"
-  otherParentVoivodeship String  // województwo drugiego rodzica
-  otherParentResidenceType String // "village", "small_city", "medium_city", "large_city"
+  otherParentGender              String   // "female" lub "male"
+  otherParentAgeRange            String   // "below_25", "25_34", "35_44", "45_54", "55_plus"
+  otherParentVoivodeship         String   // województwo drugiego rodzica
+  otherParentResidenceType       String   // "village", "small_city", "medium_city", "large_city"
   
   // Stan cywilny
-  maritalStatus         String   // "divorce_no_fault", "divorce_with_fault", etc.
-  divorceInitiator      String?  // "self", "other_parent"
-  faultClaim            Boolean?
+  maritalStatus                  String   // "divorce_no_fault", "divorce_with_fault", "in_divorce_proceedings", "separation", "marriage", "other"
+  divorceInitiator               String?  // "self", "other_parent"
+  faultClaim                     Boolean?
   
   // Dane o alimentach
-  alimentBasis          String   // "court_order", "divorce_decree", "parental_agreement", "other"
-  alimentBasisOther     String?  // jeśli alimentBasis == "other"
+  alimentBasis                   String   // "court_order", "divorce_decree", "parental_agreement", "other"
+  alimentBasisOther              String?  // jeśli alimentBasis == "other"
   
   // Informacje o sądzie
-  courtDate             DateTime?
-  courtType             String?  // "district", "regional"
-  courtLocation         String?  // miasto sądu
-  judgeCount            Int?     // 1 lub 3
-  judgeGender           String?  // "male" lub "female"
-  judgeSatisfaction     Int?     // 1-5
+  courtDate                      DateTime?
+  courtType                      String?  // "district", "regional"
+  courtLocation                  String?  // miasto sądu
+  judgeCount                     Int?     // 1 lub 3
+  judgeGender                    String?  // "female" lub "male"
+  judgeInitials                  String?  // inicjały sędziego (opcjonalne)
+  judgeSatisfaction              Int?     // 1-5
   
   // Dochody i koszty
-  userIncome            Float    // dochód użytkownika
-  userPotentialIncome   Float    // potencjalny dochód użytkownika
-  userLivingCosts       Float    // koszty utrzymania użytkownika
-  userDependantsCosts   Float    // koszty utrzymania osób na utrzymaniu użytkownika
-  userAdditionalObligations Float // dodatkowe zobowiązania użytkownika
+  userIncome                     Float    // dochód użytkownika
+  userPotentialIncome            Float    // potencjalny dochód użytkownika
+  userLivingCosts                Float    // koszty utrzymania użytkownika
+  userDependantsCosts            Float    // koszty utrzymania osób na utrzymaniu użytkownika
+  userAdditionalObligations      Float    // dodatkowe zobowiązania użytkownika
   
-  otherParentIncome     Float    // dochód drugiego rodzica
-  otherParentPotentialIncome Float // potencjalny dochód drugiego rodzica
-  otherParentLivingCosts Float    // koszty utrzymania drugiego rodzica
-  otherParentDependantsCosts Float // koszty utrzymania osób na utrzymaniu drugiego rodzica
-  otherParentAdditionalObligations Float // dodatkowe zobowiązania drugiego rodzica
+  otherParentIncome              Float    // dochód drugiego rodzica
+  otherParentPotentialIncome     Float    // potencjalny dochód drugiego rodzica
+  otherParentLivingCosts         Float    // koszty utrzymania drugiego rodzica
+  otherParentDependantsCosts     Float    // koszty utrzymania osób na utrzymaniu drugiego rodzica
+  otherParentAdditionalObligations Float   // dodatkowe zobowiązania drugiego rodzica
   
   // Dane o dzieciach
-  childrenCount         Int      // liczba dzieci objętych alimentami
-  children              Child[]  // lista dzieci
+  childrenCount                  Int      // liczba dzieci objętych alimentami
+  children                       Child[]  // lista dzieci
   
   // Zgody
-  dataProcessingConsent Boolean  // zgoda na przetwarzanie danych
-  communicationConsent  Boolean  // zgoda na komunikację
-  agreeToTerms          Boolean  // zgoda na regulamin
+  dataProcessingConsent          Boolean  // zgoda na przetwarzanie danych
+  communicationConsent           Boolean  // zgoda na komunikację
+  agreeToTerms                   Boolean  // zgoda na regulamin
   
   // Dane zabezpieczające
-  ipHash                String?  // hasza adresu IP
-  hashedEmail           String?  // zahaszowany email
+  ipHash                         String?  // hash adresu IP
+  hashedEmail                    String?  // zahaszowany email
 }
 
 model Child {
-  id                    String   @id @default(cuid())
-  formSubmission        FormSubmission @relation(fields: [formSubmissionId], references: [id], onDelete: Cascade)
-  formSubmissionId      String
+  id                             String   @id @default(cuid())
+  formSubmission                 FormSubmission @relation(fields: [formSubmissionId], references: [id], onDelete: Cascade)
+  formSubmissionId               String
   
   // Podstawowe dane
-  age                   Int      // wiek dziecka w latach
+  age                            Int      // wiek dziecka w latach
   
   // Edukacja
-  attendsEducation      Boolean  // czy uczęszcza do placówki edukacyjnej
-  educationType         String?  // "nursery", "kindergarten", "primary_school", "secondary_school"
+  attendsEducation               Boolean  // czy uczęszcza do placówki edukacyjnej
+  educationType                  String?  // "nursery", "kindergarten", "primary_school", "secondary_school"
   
   // Koszty
-  userCosts             Float    // koszty ponoszone przez użytkownika
-  otherParentCosts      Float    // koszty ponoszone przez drugiego rodzica
-  courtRecognizedCosts  Float?   // koszty uznane przez sąd
-  alimentAmount         Float    // kwota alimentów
+  userCosts                      Float    // koszty ponoszone przez użytkownika
+  otherParentCosts               Float    // koszty ponoszone przez drugiego rodzica
+  courtRecognizedCosts           Float?   // koszty uznane przez sąd
+  alimentAmount                  Float    // kwota alimentów
   
   // Dodatkowe źródła utrzymania
-  hasFamilyPension      Boolean  // renta rodzinna
-  hasCareTaking         Boolean  // świadczenie pielęgnacyjne
-  hasOtherSources       Boolean  // inne źródła
-  otherSourcesDescription String? // opis innych źródeł
+  hasFamilyPension               Boolean  // renta rodzinna
+  hasCareTaking                  Boolean  // świadczenie pielęgnacyjne
+  hasOtherSources                Boolean  // inne źródła
+  otherSourcesDescription        String?  // opis innych źródeł
   
   // Opieka
-  careType              String   // "shared_equally", "custom"
-  careSchedule          CareSchedule?
+  careType                       String   // "shared_equally", "custom"
+  careSchedules                  CareSchedule[] // harmonogramy opieki
 }
 
 model CareSchedule {
-  id                    String   @id @default(cuid())
-  child                 Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
-  childId               String   @unique
+  id                             String   @id @default(cuid())
+  child                          Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  childId                        String
   
-  cycleType             String   // "weekly", "biweekly", "monthly", "no_pattern"
-  scheduleData          Json     // dane o harmonogramie w formacie JSON
+  cycleType                      String   // "weekly", "biweekly", "monthly", "no_pattern"
+  weekNumber                     Int      // numer tygodnia w cyklu (1-4)
+  dayOfWeek                      String   // "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"
+  
+  // Godziny opieki (w formacie 0-24 dla każdej kategorii)
+  morningHours                   String?  // np. "6-8" 
+  educationalHours               String?  // np. "8-14"
+  afternoonHours                 String?  // np. "14-20"
+  sleepAtUser                    String?  // np. "20-6"
+  sleepAtOtherParent             String?  // np. "20-6"
+  
+  // Statystyki
+  hoursWithUser                  Float    // łączna liczba godzin z wypełniającym formularz
+  hoursWithOtherParent           Float    // łączna liczba godzin z drugim rodzicem
+  hoursAtSchool                  Float    // łączna liczba godzin w placówce edukacyjnej
+
+  @@unique([childId, cycleType, weekNumber, dayOfWeek])
 }

@@ -1,6 +1,6 @@
 import { AlertCircle, Shield } from "lucide-react";
 
-const Step6Consents = ({ formData, handleChange, errors }) => {
+const Step7Consents = ({ formData, handleChange, errors }) => {
   return (
     <div className="space-y-6">
       <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
@@ -73,7 +73,7 @@ const Step6Consents = ({ formData, handleChange, errors }) => {
           </div>
         </div>
 
-        {/* Pozostałe zgody bez zmian */}
+        {/* Zgoda na przetwarzanie danych */}
         <div className="relative flex items-start">
           <div className="flex items-center h-5">
             <input
@@ -160,4 +160,4 @@ const Step6Consents = ({ formData, handleChange, errors }) => {
   );
 };
 
-export default Step6Consents;
+export default Step7Consents;

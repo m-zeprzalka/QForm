@@ -78,8 +78,11 @@ const Step1Introduction = ({ formData, handleChange, errors }) => {
             alimenty.
           </li>
           <li>
-            <strong>Dochody i koszty życia rodziców</strong> obojga rodziców i
-            wydatki związane z wychowaniem dzieci.
+            <strong>Harmonogram opieki</strong> nad dzieckiem.
+          </li>
+          <li>
+            <strong>Dochody i koszty życia rodziców</strong> oraz wydatki
+            związane z wychowaniem dzieci.
           </li>
           <li>
             <strong>Informacje o postępowaniu sądowym</strong> dotyczące statusu

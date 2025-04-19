@@ -9,33 +9,28 @@ import {
   AlertCircle,
 } from "lucide-react";
 
+// Importowanie kroków formularza
 import Step1Introduction from "./form-steps/Step1Introduction";
-import Step2UserData from "./form-steps/Step2UserData";
-import Step3Children from "./form-steps/Step3Children";
-import Step4Court from "./form-steps/Step4Court";
-import Step5Income from "./form-steps/Step5Income";
-import Step6Consents from "./form-steps/Step6Consents";
+import Step2Children from "./form-steps/Step2Children";
+import Step3CareSchedule from "./form-steps/Step3CareSchedule";
+import Step4Finances from "./form-steps/Step4Finances";
+import Step5Court from "./form-steps/Step5Court";
+import Step6UserData from "./form-steps/Step6UserData";
+import Step7Consents from "./form-steps/Step7Consents";
 
 const AliMatrixForm = () => {
   const [step, setStep] = useState(1);
-  const totalSteps = 6;
+  const totalSteps = 7;
 
+  // Stan formularza
   const [formData, setFormData] = useState({
+    // Dane podstawowe
     firstName: "",
     lastName: "",
     email: "",
     phone: "",
-    gender: "",
-    ageRange: "",
-    voivodeship: "",
-    residenceType: "",
-    otherParentGender: "",
-    otherParentAgeRange: "",
-    otherParentVoivodeship: "",
-    otherParentResidenceType: "",
-    maritalStatus: "",
-    divorceInitiator: "",
-    faultClaim: false,
+
+    // Dane o alimentach
     alimentBasis: "",
     alimentBasisOther: "",
     childrenCount: 1,
@@ -53,18 +48,11 @@ const AliMatrixForm = () => {
         hasOtherSources: false,
         otherSourcesDescription: "",
         careType: "shared_equally",
-        careSchedule: {
-          cycleType: "weekly",
-          scheduleData: {},
-        },
+        careSchedules: [], // Do przechowywania harmonogramu opieki
       },
     ],
-    courtDate: "",
-    courtType: "",
-    courtLocation: "",
-    judgeCount: 1,
-    judgeGender: "",
-    judgeSatisfaction: 3,
+
+    // Dochody i koszty
     userIncome: "",
     userPotentialIncome: "",
     userLivingCosts: "",
@@ -75,18 +63,43 @@ const AliMatrixForm = () => {
     otherParentLivingCosts: "",
     otherParentDependantsCosts: "",
     otherParentAdditionalObligations: "",
+
+    // Dane sądowe
+    courtDate: "",
+    courtType: "",
+    courtLocation: "",
+    judgeCount: 1,
+    judgeGender: "",
+    judgeInitials: "",
+    judgeSatisfaction: 3,
+    divorceInitiator: "",
+    faultClaim: false,
+
+    // Dane użytkownika
+    gender: "",
+    ageRange: "",
+    voivodeship: "",
+    residenceType: "",
+    otherParentGender: "",
+    otherParentAgeRange: "",
+    otherParentVoivodeship: "",
+    otherParentResidenceType: "",
+    maritalStatus: "",
+
+    // Zgody
     dataProcessingConsent: false,
     communicationConsent: false,
     agreeToTerms: false,
   });
 
+  // Stany dla błędów, ładowania i ukończenia
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [formError, setFormError] = useState(null);
   const [saveStatus, setSaveStatus] = useState(null);
 
-  // Sprawdź, czy istnieją zapisane dane formularza
+  // Sprawdzanie zapisanego stanu formularza przy pierwszym ładowaniu
   useEffect(() => {
     const savedData = localStorage.getItem("alimatrix-form-data");
     if (savedData) {
@@ -109,11 +122,23 @@ const AliMatrixForm = () => {
     }
   }, [saveStatus]);
 
+  // Funkcja zapisująca postęp formularza
+  const saveProgress = () => {
+    try {
+      localStorage.setItem("alimatrix-form-data", JSON.stringify(formData));
+      return true;
+    } catch (error) {
+      console.error("Błąd podczas zapisywania formularza:", error);
+      return false;
+    }
+  };
+
+  // Funkcja walidująca poszczególne kroki formularza
   const validateStep = (currentStep) => {
     let stepErrors = {};
 
     switch (currentStep) {
-      case 1:
+      case 1: // Wprowadzenie i dane podstawowe
         if (!formData.firstName.trim())
           stepErrors.firstName = "Imię jest wymagane";
         if (!formData.lastName.trim())
@@ -128,34 +153,10 @@ const AliMatrixForm = () => {
         } else if (!/^\d{9}$/.test(formData.phone.replace(/\s/g, ""))) {
           stepErrors.phone = "Numer powinien zawierać 9 cyfr";
         }
-        break;
-
-      case 2:
-        if (!formData.gender) stepErrors.gender = "Wybierz płeć";
-        if (!formData.ageRange)
-          stepErrors.ageRange = "Wybierz przedział wiekowy";
-        if (!formData.voivodeship)
-          stepErrors.voivodeship = "Wybierz województwo";
-        if (!formData.residenceType)
-          stepErrors.residenceType = "Wybierz miejsce zamieszkania";
-        if (!formData.otherParentGender)
-          stepErrors.otherParentGender = "Wybierz płeć drugiego rodzica";
-        if (!formData.otherParentAgeRange)
-          stepErrors.otherParentAgeRange =
-            "Wybierz przedział wiekowy drugiego rodzica";
-        if (!formData.otherParentVoivodeship)
-          stepErrors.otherParentVoivodeship =
-            "Wybierz województwo drugiego rodzica";
-        if (!formData.otherParentResidenceType)
-          stepErrors.otherParentResidenceType =
-            "Wybierz miejsce zamieszkania drugiego rodzica";
-        if (!formData.maritalStatus)
-          stepErrors.maritalStatus = "Wybierz stan cywilny";
-        break;
-
-      case 3:
-        if (!formData.alimentBasis)
-          stepErrors.alimentBasis = "Wybierz podstawę ustalenia alimentów";
+        if (!formData.alimentBasis) {
+          stepErrors.alimentBasis =
+            "Podstawa ustalenia alimentów jest wymagana";
+        }
         if (
           formData.alimentBasis === "other" &&
           !formData.alimentBasisOther.trim()
@@ -163,6 +164,9 @@ const AliMatrixForm = () => {
           stepErrors.alimentBasisOther =
             "Podaj inną podstawę ustalenia alimentów";
         }
+        break;
+
+      case 2: // Dane o dzieciach
         if (!formData.childrenCount || formData.childrenCount < 1) {
           stepErrors.childrenCount = "Podaj liczbę dzieci objętych alimentami";
         }
@@ -198,19 +202,20 @@ const AliMatrixForm = () => {
         });
         break;
 
-      case 4:
-        if (["court_order", "divorce_decree"].includes(formData.alimentBasis)) {
-          if (!formData.courtDate)
-            stepErrors.courtDate = "Podaj datę wydania postanowienia";
-          if (!formData.courtType) stepErrors.courtType = "Wybierz rodzaj sądu";
-          if (!formData.courtLocation)
-            stepErrors.courtLocation = "Wybierz miejscowość sądu";
-          if (!formData.judgeGender)
-            stepErrors.judgeGender = "Wybierz płeć sędziego";
-        }
+      case 3: // Harmonogram opieki
+        // Walidacja dla dzieci z niestandardowym harmonogramem opieki
+        formData.children.forEach((child, index) => {
+          if (child.careType === "custom") {
+            // Sprawdź czy istnieje przynajmniej jeden wpis w harmonogramie
+            if (!child.careSchedules || child.careSchedules.length === 0) {
+              stepErrors[`children[${index}].careSchedules`] =
+                "Harmonogram opieki jest wymagany dla niestandardowej opieki";
+            }
+          }
+        });
         break;
 
-      case 5:
+      case 4: // Finanse
         if (
           !formData.userIncome ||
           isNaN(parseFloat(formData.userIncome)) ||
@@ -236,7 +241,44 @@ const AliMatrixForm = () => {
         }
         break;
 
-      case 6:
+      case 5: // Sąd
+        if (["court_order", "divorce_decree"].includes(formData.alimentBasis)) {
+          if (!formData.courtDate) {
+            stepErrors.courtDate = "Podaj datę wydania postanowienia";
+          }
+          if (!formData.courtType) {
+            stepErrors.courtType = "Wybierz rodzaj sądu";
+          }
+          if (!formData.courtLocation) {
+            stepErrors.courtLocation = "Wybierz miejscowość sądu";
+          }
+        }
+        break;
+
+      case 6: // Dane użytkownika
+        if (!formData.gender) stepErrors.gender = "Wybierz płeć";
+        if (!formData.ageRange)
+          stepErrors.ageRange = "Wybierz przedział wiekowy";
+        if (!formData.voivodeship)
+          stepErrors.voivodeship = "Wybierz województwo";
+        if (!formData.residenceType)
+          stepErrors.residenceType = "Wybierz miejsce zamieszkania";
+        if (!formData.otherParentGender)
+          stepErrors.otherParentGender = "Wybierz płeć drugiego rodzica";
+        if (!formData.otherParentAgeRange)
+          stepErrors.otherParentAgeRange =
+            "Wybierz przedział wiekowy drugiego rodzica";
+        if (!formData.otherParentVoivodeship)
+          stepErrors.otherParentVoivodeship =
+            "Wybierz województwo drugiego rodzica";
+        if (!formData.otherParentResidenceType)
+          stepErrors.otherParentResidenceType =
+            "Wybierz miejsce zamieszkania drugiego rodzica";
+        if (!formData.maritalStatus)
+          stepErrors.maritalStatus = "Wybierz stan cywilny";
+        break;
+
+      case 7: // Zgody
         if (!formData.dataProcessingConsent) {
           stepErrors.dataProcessingConsent =
             "Zgoda na przetwarzanie danych jest wymagana";
@@ -270,17 +312,7 @@ const AliMatrixForm = () => {
     return isValid;
   };
 
-  // Funkcja zapisująca postęp formularza
-  const saveProgress = () => {
-    try {
-      localStorage.setItem("alimatrix-form-data", JSON.stringify(formData));
-      return true;
-    } catch (error) {
-      console.error("Błąd podczas zapisywania formularza:", error);
-      return false;
-    }
-  };
-
+  // Obsługa zmiany pól formularza
   const handleChange = (e) => {
     if (!e || !e.target) {
       console.error("Nieprawidłowy event:", e);
@@ -299,6 +331,7 @@ const AliMatrixForm = () => {
       setFormError(null);
     }
 
+    // Obsługa zagnieżdżonych pól (np. dla dzieci)
     if (name.startsWith("children[")) {
       const match = name.match(/children\[(\d+)\]\.(.+)/);
       if (match) {
@@ -342,10 +375,12 @@ const AliMatrixForm = () => {
     }
   };
 
+  // Funkcja do aktualizacji całych obiektów formularza
   const updateFormData = (newData) => {
     setFormData({ ...formData, ...newData });
   };
 
+  // Obsługa przejścia do następnego kroku
   const nextStep = () => {
     if (validateStep(step)) {
       // Zapisuj postęp automatycznie przy przejściu do następnego kroku
@@ -355,12 +390,13 @@ const AliMatrixForm = () => {
     }
   };
 
+  // Obsługa powrotu do poprzedniego kroku
   const prevStep = () => {
     setStep(step - 1);
     window.scrollTo(0, 0);
   };
 
-  // Funkcja obsługująca manualne zapisanie postępu
+  // Funkcja do ręcznego zapisania postępu
   const handleSaveProgress = () => {
     const saved = saveProgress();
     if (saved) {
@@ -370,6 +406,7 @@ const AliMatrixForm = () => {
     }
   };
 
+  // Obsługa wysłania formularza
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -392,6 +429,7 @@ const AliMatrixForm = () => {
           );
         }
 
+        // Sukces
         setIsSubmitting(false);
         setIsSubmitted(true);
 
@@ -411,6 +449,7 @@ const AliMatrixForm = () => {
     }
   };
 
+  // Renderowanie paska postępu
   const renderProgress = () => {
     return (
       <div className="mb-8">
@@ -432,6 +471,7 @@ const AliMatrixForm = () => {
     );
   };
 
+  // Renderowanie zawartości aktualnego kroku
   const renderStepContent = () => {
     switch (step) {
       case 1:
@@ -444,7 +484,7 @@ const AliMatrixForm = () => {
         );
       case 2:
         return (
-          <Step2UserData
+          <Step2Children
             formData={formData}
             handleChange={handleChange}
             updateFormData={updateFormData}
@@ -453,7 +493,7 @@ const AliMatrixForm = () => {
         );
       case 3:
         return (
-          <Step3Children
+          <Step3CareSchedule
             formData={formData}
             handleChange={handleChange}
             updateFormData={updateFormData}
@@ -462,7 +502,7 @@ const AliMatrixForm = () => {
         );
       case 4:
         return (
-          <Step4Court
+          <Step4Finances
             formData={formData}
             handleChange={handleChange}
             errors={errors}
@@ -470,7 +510,7 @@ const AliMatrixForm = () => {
         );
       case 5:
         return (
-          <Step5Income
+          <Step5Court
             formData={formData}
             handleChange={handleChange}
             errors={errors}
@@ -478,7 +518,16 @@ const AliMatrixForm = () => {
         );
       case 6:
         return (
-          <Step6Consents
+          <Step6UserData
+            formData={formData}
+            handleChange={handleChange}
+            updateFormData={updateFormData}
+            errors={errors}
+          />
+        );
+      case 7:
+        return (
+          <Step7Consents
             formData={formData}
             handleChange={handleChange}
             errors={errors}
@@ -489,6 +538,7 @@ const AliMatrixForm = () => {
     }
   };
 
+  // Renderowanie przycisków nawigacji
   const renderButtons = () => {
     return (
       <div className="flex justify-between mt-8">
@@ -558,6 +608,7 @@ const AliMatrixForm = () => {
     );
   };
 
+  // Widok po wysłaniu formularza
   if (isSubmitted) {
     return (
       <div className="w-full max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden p-8 text-center">
@@ -581,6 +632,7 @@ const AliMatrixForm = () => {
     );
   }
 
+  // Główny widok formularza
   return (
     <div className="w-full max-w-3xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
       <div className="pt-6 px-6 pb-2 bg-gradient-to-r from-blue-50 to-indigo-50">

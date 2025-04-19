@@ -5,11 +5,20 @@ import crypto from "crypto";
 
 const prisma = new PrismaClient();
 
+// Funkcja do hashowania danych
 function hashData(data) {
   if (!data) return null;
-  return crypto.createHash("sha256").update(data.toString()).digest("hex");
+  const salt = crypto.randomBytes(16).toString("hex");
+  return (
+    crypto
+      .pbkdf2Sync(data.toString(), salt, 1000, 64, "sha512")
+      .toString("hex") +
+    ":" +
+    salt
+  );
 }
 
+// Bezpieczne parsowanie wartości liczbowych
 function safeParseFloat(value) {
   const parsed = parseFloat(value);
   return isNaN(parsed) ? 0 : parsed;
@@ -20,11 +29,11 @@ function safeParseInt(value) {
   return isNaN(parsed) ? 0 : parsed;
 }
 
+// Bezpieczne parsowanie dat
 function safeParseDateOrNull(dateInput) {
   if (!dateInput) return null;
   try {
     const date = new Date(dateInput);
-    // Sprawdź, czy data jest poprawna (nie jest Invalid Date)
     return isNaN(date.getTime()) ? null : date;
   } catch (error) {
     console.error("Błąd parsowania daty:", error);
@@ -32,13 +41,44 @@ function safeParseDateOrNull(dateInput) {
   }
 }
 
+// Funkcja do przetwarzania danych harmonogramu opieki
+function processCareSchedules(careScheduleData, childId) {
+  if (!careScheduleData || !Array.isArray(careScheduleData)) return [];
+
+  // Przekształć dane o harmonogramie w format do zapisu
+  return careScheduleData.map((schedule) => {
+    const hoursWithUser = safeParseFloat(schedule.hoursWithUser || 0);
+    const hoursWithOtherParent = safeParseFloat(
+      schedule.hoursWithOtherParent || 0
+    );
+    const hoursAtSchool = safeParseFloat(schedule.hoursAtSchool || 0);
+
+    return {
+      childId,
+      cycleType: schedule.cycleType || "weekly",
+      weekNumber: safeParseInt(schedule.weekNumber || 1),
+      dayOfWeek: schedule.dayOfWeek,
+      morningHours: schedule.morningHours,
+      educationalHours: schedule.educationalHours,
+      afternoonHours: schedule.afternoonHours,
+      sleepAtUser: schedule.sleepAtUser,
+      sleepAtOtherParent: schedule.sleepAtOtherParent,
+      hoursWithUser,
+      hoursWithOtherParent,
+      hoursAtSchool,
+    };
+  });
+}
+
 export async function POST(request) {
   try {
     const body = await request.json();
 
+    // Hashowanie wrażliwych danych
     const hashedEmail = body.email ? hashData(body.email) : null;
-    const ipHash = hashData("127.0.0.1");
+    const ipHash = hashData("127.0.0.1"); // W produkcji: request.headers.get('x-forwarded-for') || "127.0.0.1"
 
+    // Dane podstawowe formularza
     const formSubmissionData = {
       firstName: body.firstName || "",
       lastName: body.lastName || "",
@@ -68,6 +108,7 @@ export async function POST(request) {
       courtLocation: body.courtLocation || null,
       judgeCount: safeParseInt(body.judgeCount) || 1,
       judgeGender: body.judgeGender || null,
+      judgeInitials: body.judgeInitials || null,
       judgeSatisfaction: safeParseInt(body.judgeSatisfaction) || 3,
 
       userIncome: safeParseFloat(body.userIncome),
@@ -96,12 +137,15 @@ export async function POST(request) {
       hashedEmail: hashedEmail,
     };
 
+    // Zapisanie głównego formularza w bazie danych
     const formSubmission = await prisma.formSubmission.create({
       data: formSubmissionData,
     });
 
+    // Przetwarzanie danych o dzieciach
     if (Array.isArray(body.children) && body.children.length > 0) {
       for (const childData of body.children) {
+        // Przygotowanie danych dziecka do zapisu
         const childDataToSave = {
           formSubmissionId: formSubmission.id,
           age: safeParseInt(childData.age),
@@ -118,22 +162,33 @@ export async function POST(request) {
           careType: childData.careType || "shared_equally",
         };
 
+        // Zapisanie dziecka w bazie
         const savedChild = await prisma.child.create({
           data: childDataToSave,
         });
 
-        if (childData.careType === "custom" && childData.careSchedule) {
-          await prisma.careSchedule.create({
-            data: {
-              childId: savedChild.id,
-              cycleType: childData.careSchedule.cycleType || "weekly",
-              scheduleData: childData.careSchedule.scheduleData || {},
-            },
-          });
+        // Przetwarzanie harmonogramu opieki, jeśli istnieje
+        if (
+          childData.careType === "custom" &&
+          Array.isArray(childData.careSchedules) &&
+          childData.careSchedules.length > 0
+        ) {
+          const scheduleEntries = processCareSchedules(
+            childData.careSchedules,
+            savedChild.id
+          );
+
+          // Zapisanie wszystkich wpisów harmonogramu
+          for (const scheduleEntry of scheduleEntries) {
+            await prisma.careSchedule.create({
+              data: scheduleEntry,
+            });
+          }
         }
       }
     }
 
+    // Zwrócenie sukcesu
     return NextResponse.json(
       {
         success: true,

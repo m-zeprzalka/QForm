@@ -1,8 +1,9 @@
-// src/components/form-steps/Step3Children.js
+"use client";
+
 import { useState } from "react";
 import { PlusCircle, MinusCircle, AlertCircle } from "lucide-react";
 
-const Step3Children = ({ formData, handleChange, updateFormData, errors }) => {
+const Step2Children = ({ formData, handleChange, updateFormData, errors }) => {
   // Funkcja do aktualizacji danych dziecka
   const updateChildData = (index, field, value) => {
     const updatedChildren = [...formData.children];
@@ -37,10 +38,7 @@ const Step3Children = ({ formData, handleChange, updateFormData, errors }) => {
           hasOtherSources: false,
           otherSourcesDescription: "",
           careType: "shared_equally",
-          careSchedule: {
-            cycleType: "weekly",
-            scheduleData: {},
-          },
+          careSchedules: [],
         },
       ],
     });
@@ -61,11 +59,12 @@ const Step3Children = ({ formData, handleChange, updateFormData, errors }) => {
     <div className="space-y-6">
       <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
         <h2 className="text-xl font-semibold text-gray-800 mb-3">
-          Informacje o alimentach i dzieciach
+          Informacje o dzieciach
         </h2>
         <p className="text-gray-600">
-          Podaj informacje o podstawie ustalenia alimentów i dzieciach objętych
-          alimentami.
+          Podaj informacje o dzieciach objętych alimentami. Dla każdego dziecka
+          wypełnij osobny zestaw danych dotyczących kosztów utrzymania, edukacji
+          i opieki.
         </p>
       </div>
 
@@ -550,19 +549,24 @@ const Step3Children = ({ formData, handleChange, updateFormData, errors }) => {
             </div>
 
             {child.careType === "custom" && (
-              <div className="mt-3 p-3 bg-gray-100 rounded-lg">
-                <p className="text-sm text-gray-600 mb-2">
-                  W pełnej wersji formularza, tutaj znajdowałaby się tabela do
-                  określenia szczegółowego podziału opieki. Dla uproszczenia
-                  MVP, ta funkcjonalność będzie dodana w kolejnej wersji.
-                </p>
-              </div>
+              <p className="mt-2 text-sm text-blue-600">
+                W następnym kroku będziesz mógł szczegółowo określić harmonogram
+                opieki.
+              </p>
             )}
           </div>
         </div>
       ))}
+
+      <div className="p-4 bg-yellow-50 border border-yellow-100 rounded-lg">
+        <p className="text-sm text-yellow-800">
+          <strong>Uwaga:</strong> Podając koszty miesięczne, pamiętaj aby
+          uwzględnić proporcjonalnie koszty nieregularne (np. wakacje, sprzęt,
+          opłaty raz w roku), dzieląc je przez 12.
+        </p>
+      </div>
     </div>
   );
 };
 
-export default Step3Children;
+export default Step2Children;

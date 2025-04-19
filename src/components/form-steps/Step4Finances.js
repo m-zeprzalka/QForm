@@ -1,7 +1,8 @@
-// src/components/form-steps/Step5Income.js
+"use client";
+
 import { AlertCircle, HelpCircle } from "lucide-react";
 
-const Step5Income = ({ formData, handleChange, errors }) => {
+const Step4Finances = ({ formData, handleChange, errors }) => {
   return (
     <div className="space-y-6">
       <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
@@ -10,9 +11,9 @@ const Step5Income = ({ formData, handleChange, errors }) => {
         </h2>
         <p className="text-gray-600">
           Sąd decydując o wysokości alimentów bierze pod uwagę nie tylko
-          oficjalne dochody, ale również możliwości zarobkowe. Aby otrzymać
-          wiarygodny raport, podaj jak najbardziej rzetelne informacje o
-          dochodach i kosztach.
+          oficjalne dochody, ale również praktyki rynkowe oraz Twoje możliwości
+          zarobkowe. Aby otrzymać wiarygodny raport, podaj jak najbardziej
+          rzetelne informacje o dochodach i kosztach.
         </p>
       </div>
 
@@ -287,14 +288,35 @@ const Step5Income = ({ formData, handleChange, errors }) => {
       </div>
 
       <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-100">
-        <p className="text-sm text-yellow-800">
-          <strong>Uwaga:</strong> W celu uzyskania jak najbardziej precyzyjnej
-          analizy, prosimy o podanie rzeczywistych kwot. Wszystkie dane będą
-          przetwarzane w sposób zanonimizowany.
-        </p>
+        <div className="flex items-start">
+          <HelpCircle
+            size={20}
+            className="text-yellow-500 mr-2 mt-0.5 flex-shrink-0"
+          />
+          <div>
+            <p className="text-sm text-yellow-800 font-medium mb-2">
+              Ważne informacje dotyczące kosztów:
+            </p>
+            <ul className="text-sm text-yellow-700 space-y-1 list-disc pl-5">
+              <li>
+                Prosimy o podanie rzeczywistych miesięcznych kwot, aby uzyskać
+                jak najbardziej precyzyjną analizę.
+              </li>
+              <li>
+                Nieregularne wydatki, takie jak wakacje czy opłaty roczne,
+                należy uwzględnić proporcjonalnie, dzieląc je przez 12.
+              </li>
+              <li>
+                Unikaj uwzględniania tych samych kosztów w kilku kategoriach
+                (np. koszty prowadzenia działalności nie powinny być liczone
+                ponownie w kosztach utrzymania).
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
-export default Step5Income;
+export default Step4Finances;

@@ -1,4 +1,3 @@
-// src/components/form-steps/Step4Court.js
 import { AlertCircle } from "lucide-react";
 
 const COURT_LOCATIONS = [
@@ -15,7 +14,7 @@ const COURT_LOCATIONS = [
   // W pełnej wersji byłaby tu lista wszystkich 318 sądów rejonowych i 47 okręgowych
 ];
 
-const Step4Court = ({ formData, handleChange, errors }) => {
+const Step5Court = ({ formData, handleChange, errors }) => {
   // Czy ten krok jest wymagany?
   const isCourtInfoRequired = ["court_order", "divorce_decree"].includes(
     formData.alimentBasis
@@ -291,6 +290,24 @@ const Step4Court = ({ formData, handleChange, errors }) => {
             </p>
           )}
         </div>
+
+        <div>
+          <label
+            htmlFor="judgeInitials"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            Inicjały sędziego (opcjonalnie)
+          </label>
+          <input
+            type="text"
+            id="judgeInitials"
+            name="judgeInitials"
+            value={formData.judgeInitials || ""}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="np. A.K."
+          />
+        </div>
       </div>
 
       <div className="mt-6">
@@ -323,4 +340,4 @@ const Step4Court = ({ formData, handleChange, errors }) => {
   );
 };
 
-export default Step4Court;
+export default Step5Court;

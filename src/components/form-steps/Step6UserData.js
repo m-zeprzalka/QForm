@@ -19,12 +19,23 @@ const VOIVODESHIPS = [
   "zachodniopomorskie",
 ];
 
-const Step2UserData = ({ formData, handleChange, errors }) => {
+const Step6UserData = ({ formData, handleChange, updateFormData, errors }) => {
   return (
     <div className="space-y-8">
+      <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+        <h2 className="text-xl font-semibold text-gray-800 mb-3">
+          Dane użytkownika
+        </h2>
+        <p className="text-gray-600">
+          Potrzebujemy kilku informacji o Tobie i drugim rodzicu, aby lepiej
+          zrozumieć kontekst Twojej sytuacji. Dane te pozwolą nam przygotować
+          bardziej miarodajną analizę.
+        </p>
+      </div>
+
       {/* Twoje dane */}
       <div className="bg-blue-50 p-5 rounded-lg">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Twoje dane</h2>
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Twoje dane</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -175,9 +186,9 @@ const Step2UserData = ({ formData, handleChange, errors }) => {
 
       {/* Dane drugiego rodzica */}
       <div className="bg-gray-50 p-5 rounded-lg">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">
           Dane drugiego rodzica
-        </h2>
+        </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -334,9 +345,9 @@ const Step2UserData = ({ formData, handleChange, errors }) => {
 
       {/* Stan cywilny */}
       <div className="bg-blue-50 p-5 rounded-lg">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">
           Stan cywilny
-        </h2>
+        </h3>
 
         <div className="space-y-4">
           <div>
@@ -456,4 +467,4 @@ const Step2UserData = ({ formData, handleChange, errors }) => {
   );
 };
 
-export default Step2UserData;
+export default Step6UserData;
